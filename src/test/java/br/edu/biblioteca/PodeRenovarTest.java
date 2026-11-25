@@ -31,21 +31,6 @@ class PodeRenovarTest {
         );
     }
 
-    // Limite de renovações atingido.
-    @ParameterizedTest
-    @CsvSource({
-        "ALUNO, 2",
-        "PROFESSOR, 3"
-    })
-    void renovacaoNegadaQuandoLimiteAtingido(
-            TipoUsuario tipo,
-            int renovacoesFeitas) {
-
-        assertFalse(
-            regras.podeRenovar(tipo, renovacoesFeitas, false, false)
-        );
-    }
-
     // Visitantes não podem renovar.
     @Test
     void visitanteNaoPodeRenovar() {
@@ -86,6 +71,26 @@ class PodeRenovarTest {
 
         assertFalse(
             regras.podeRenovar(tipo, renovacoesFeitas, false, false)
+        );
+    }
+
+    // Entradas inválidas: número de renovações feitas negativo.
+    @ParameterizedTest
+    @CsvSource({
+        "ALUNO, -1",
+        "ALUNO, -5",
+        "PROFESSOR, -1",
+        "PROFESSOR, -5",
+        "VISITANTE, -1",
+        "VISITANTE, -5"
+    })
+    void renovacoesNegativasLancaIllegalArgumentException(
+            TipoUsuario tipo,
+            int renovacoesFeitas) {
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> regras.podeRenovar(tipo, renovacoesFeitas, false, false)
         );
     }
 
