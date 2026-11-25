@@ -1,73 +1,111 @@
-# Plano de testes — Fase 1 (caixa-preta)
+# Plano de Testes — Sistema de Biblioteca
 
-Técnicas: **PE** = partição de equivalência, **VL** = valor-limite.
-Todos os resultados esperados vêm da especificação (Anexo A), nunca do que o sistema devolve.
-Cada linha tem um ID (ex.: `MC-D7`) e a coluna "Teste que cobre" indica o método de teste em `MultaCentavosTest.java`.
-Dica: acrescente o ID como comentário na linha correspondente do `@CsvSource`, para ligar plano e teste.
+## 1. Objetivo
 
----
+Este trabalho tem como objetivo avaliar o comportamento do sistema de biblioteca por meio de testes de caixa-preta, verificando se as funcionalidades implementadas atendem às regras estabelecidas na especificação (Anexo A).
 
-## multaCentavos(TipoUsuario tipo, int diasAtraso)
+Os testes são realizados sobre a biblioteca compilada disponibilizada (`biblioteca-1.0.jar`), sem acesso ou alteração de seu código-fonte.
 
-Regras usadas: dias cobrados = `diasAtraso` (aluno, visitante) ou `max(0, diasAtraso - 3)` (professor);
-dias cobrados 1–10 a 100 centavos, do 11º em diante a 200 centavos; teto de 5000 centavos;
-`diasAtraso` negativo e `tipo` nulo lançam `IllegalArgumentException`.
+O objetivo é identificar divergências entre os resultados esperados, definidos pela especificação, e os resultados efetivamente retornados pelo sistema.
 
-### Entrada `tipo`
+## 2. Estratégia de Testes
 
-| ID | Classe | Válida? | Valor | Esperado | Teste que cobre |
-|---|---|---|---|---|---|
-| MC-T1 | ALUNO | válida | `ALUNO` | todos os dias cobrados | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-T2 | PROFESSOR | válida | `PROFESSOR` | 3 dias de carência | `professorTemCarenciaDeTresDias` |
-| MC-T3 | VISITANTE | válida | `VISITANTE` | todos os dias cobrados | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-T4 | nulo | inválida | `null` | `IllegalArgumentException` | `tipoNuloLancaExcecao` |
+Foi adotada a abordagem de testes de caixa-preta, na qual os testes são projetados com base nas entradas, saídas esperadas e regras funcionais especificadas, sem conhecimento ou dependência da implementação interna do sistema.
 
-### Entrada `diasAtraso` — aluno e visitante (dias cobrados = diasAtraso)
+A especificação do Anexo A foi utilizada como oráculo para determinar os resultados esperados.
 
-| ID | Classe ou limite | Valor | Esperado (centavos) | Teste que cobre |
-|---|---|---|---|---|
-| MC-D1 | PE inválida: negativos (interior) | -10 | `IllegalArgumentException` | `diasAtrasoMuitoNegativoLancaExcecao` |
-| MC-D2 | VL: -1 (primeiro inválido) | -1 | `IllegalArgumentException` | `diasAtrasoNegativoNoLimiteLancaExcecao` |
-| MC-D3 | VL: 0 (primeiro válido, sem atraso) | 0 | 0 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D4 | VL: 1 (1º dia cobrado) | 1 | 100 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D5 | PE faixa 1 (1–10): interior | 5 | 500 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D6 | VL: 10 (último dia a R$ 1,00) | 10 | 1000 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D7 | VL: 11 (1º dia a R$ 2,00) | 11 | 1200 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D8 | PE faixa 2 (11–30): exemplo do Anexo A | 12 | 1400 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D9 | PE faixa 2 (11–30): interior | 20 | 3000 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D10 | VL: 30 (exatamente no teto) | 30 | 5000 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D11 | VL: 31 (1º valor acima do teto) | 31 | 5000 | `alunoEVisitanteTemTodosOsDiasCobrados` |
-| MC-D12 | PE teto (≥ 31): interior | 100 | 5000 | `alunoEVisitanteTemTodosOsDiasCobrados` |
+Os testes foram implementados utilizando JUnit 5, organizados em classes de acordo com as funcionalidades da biblioteca.
 
-### Entrada `diasAtraso` — professor (dias cobrados = diasAtraso − 3)
+## 3. Técnicas de Projeto de Testes Utilizadas
 
-Os limites acima se deslocam +3 por causa da carência.
+### 3.1. Particionamento de Equivalência
 
-| ID | Classe ou limite | Valor | Esperado (centavos) | Teste que cobre |
-|---|---|---|---|---|
-| MC-P1 | VL: 0 (sem atraso) | 0 | 0 | `professorTemCarenciaDeTresDias` |
-| MC-P2 | PE carência (1–3): interior | 1 | 0 | `professorTemCarenciaDeTresDias` |
-| MC-P3 | VL: 3 (último dia de carência) | 3 | 0 | `professorTemCarenciaDeTresDias` |
-| MC-P4 | VL: 4 (1º dia cobrado) | 4 | 100 | `professorTemCarenciaDeTresDias` |
-| MC-P5 | PE faixa 1: interior | 8 | 500 | `professorTemCarenciaDeTresDias` |
-| MC-P6 | VL: 13 (10º dia cobrado) | 13 | 1000 | `professorTemCarenciaDeTresDias` |
-| MC-P7 | VL: 14 (11º dia cobrado) | 14 | 1200 | `professorTemCarenciaDeTresDias` |
-| MC-P8 | PE faixa 2: 12 dias cobrados (como o exemplo do Anexo A) | 15 | 1400 | `professorTemCarenciaDeTresDias` |
-| MC-P9 | VL: 33 (30º dia cobrado, exatamente no teto) | 33 | 5000 | `professorTemCarenciaDeTresDias` |
-| MC-P10 | VL: 34 (31º dia cobrado, acima do teto) | 34 | 5000 | `professorTemCarenciaDeTresDias` |
-| MC-P11 | PE teto: interior | 200 | 5000 | `professorTemCarenciaDeTresDias` |
-| MC-P12 | PE inválida: negativos para professor | -1 e -10 | `IllegalArgumentException` | `diasAtrasoNegativoNoLimiteLancaExcecao`, `diasAtrasoMuitoNegativoLancaExcecao` |
+As entradas foram agrupadas em classes de equivalência, considerando situações nas quais se espera que o sistema apresente comportamentos semelhantes.
 
----
+Foram consideradas, entre outras, as seguintes categorias:
 
-## prazoDias — A PREENCHER
+- Tipos de usuário: ALUNO, PROFESSOR e VISITANTE.
+- Quantidades válidas e inválidas de empréstimos e renovações.
+- Quantidades de dias de atraso em diferentes faixas de cobrança.
+- Valores de multas pendentes dentro e fora do limite permitido.
+- Situações com e sem atrasos ou reservas.
 
-## dataDevolucao — A PREENCHER
+A utilização dessas classes permite selecionar casos representativos sem precisar testar todas as combinações possíveis de entradas.
 
-## limiteEmprestimos — A PREENCHER
+### 3.2. Análise de Valores Limite
 
-## podeEmprestar — A PREENCHER
+Foram selecionados casos próximos aos limites estabelecidos nas regras de negócio, especialmente nas situações em que o comportamento do sistema muda.
 
-## podeRenovar — A PREENCHER
+Entre os limites explorados estão:
 
-## multaTotalCentavos — A PREENCHER
+- 10 e 11 dias de atraso, considerando a mudança na tarifa diária.
+- 3 e 4 dias de atraso para PROFESSOR, considerando o período de carência.
+- Valores próximos ao limite de multa por empréstimo, de 5000 centavos.
+- Valores próximos ao limite de multa pendente para concessão de empréstimos, de 1000 centavos.
+- Quantidades de empréstimos próximas aos limites de cada tipo de usuário.
+- Quantidades de renovações próximas aos limites de cada tipo de usuário.
+- Valores próximos ao limite de multa total, de 10000 centavos.
+
+Também foram considerados valores acima dos limites, permitindo verificar se as restrições são aplicadas corretamente.
+
+### 3.3. Testes de Entradas Inválidas
+
+Foram incluídos testes para entradas inválidas, verificando se o sistema lança `IllegalArgumentException` nas situações previstas pela especificação.
+
+Entre essas situações estão:
+
+- Tipos de usuário nulos.
+- Datas de retirada nulas.
+- Quantidades negativas de empréstimos e renovações.
+- Dias de atraso negativos.
+- Arrays nulos ou contendo valores negativos, quando aplicável.
+
+## 4. Organização dos Testes
+
+Os testes foram organizados em sete classes, cada uma associada a uma funcionalidade da biblioteca.
+
+| Classe                   | Funcionalidade       | Principais cenários                                                                    |
+| ------------------------ | -------------------- | -------------------------------------------------------------------------------------- |
+| `PrazoDiasTest`          | `prazoDias`          | Prazo para cada tipo de usuário e tipo nulo.                                           |
+| `DataDevolucaoTest`      | `dataDevolucao`      | Cálculo da data de devolução, ajustes para domingo e entradas nulas.                   |
+| `LimiteEmprestimosTest`  | `limiteEmprestimos`  | Limite de empréstimos por tipo de usuário e tipo nulo.                                 |
+| `MultaCentavosTest`      | `multaCentavos`      | Faixas de cobrança, carência de professor, teto por empréstimo e entradas inválidas.   |
+| `PodeEmprestarTest`      | `podeEmprestar`      | Limite de empréstimos, multa pendente, atrasos e entradas inválidas.                   |
+| `PodeRenovarTest`        | `podeRenovar`        | Limites de renovação, reservas, atrasos, restrição de visitante e entradas inválidas.  |
+| `MultaTotalCentavosTest` | `multaTotalCentavos` | Soma de multas, teto total, carência de professor, arrays vazios e entradas inválidas. |
+
+## 5. Execução dos Testes
+
+Os testes podem ser executados utilizando Maven, a partir da raiz do projeto, com o comando:
+
+```bash
+mvn test
+```
+
+O framework JUnit 5 foi utilizado para implementar testes unitários e parametrizados, permitindo executar diferentes cenários a partir de conjuntos de dados.
+
+## 6. Resultados da Execução
+
+Na execução realizada em 23/11/2026, foram obtidos os seguintes resultados:
+
+| Resultado         | Quantidade |
+| ----------------- | ---------: |
+| Testes executados |        111 |
+| Testes com falha  |         52 |
+| Testes sem falha  |         59 |
+| Erros de execução |          0 |
+| Testes ignorados  |          0 |
+
+As falhas identificadas indicam divergências entre os comportamentos observados na biblioteca e os comportamentos esperados definidos na especificação.
+
+As evidências obtidas durante a execução serão analisadas e documentadas separadamente no arquivo `DEFEITOS.md`.
+
+O resultado `BUILD SUCCESS` apresentado pelo Maven não significa que todos os testes passaram. A execução foi concluída, porém o relatório do Surefire indicou falhas nas asserções.
+
+## 7. Considerações
+
+A suíte de testes foi projetada para verificar as regras funcionais da biblioteca, explorando diferentes tipos de usuários, valores limites, combinações de condições e entradas inválidas.
+
+A organização dos testes por funcionalidade facilita a identificação dos comportamentos divergentes e a manutenção da suíte.
+
+Os resultados obtidos serão utilizados para documentar os defeitos observados, sem assumir que cada falha de teste representa necessariamente um defeito independente.
