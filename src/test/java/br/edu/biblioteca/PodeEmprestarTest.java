@@ -16,9 +16,16 @@ class PodeEmprestarTest {
     @ParameterizedTest
     @CsvSource({
         "ALUNO,  0,    0, false",
+        "ALUNO,  1,  500, false",
+        "ALUNO,  2,  999, false",
         "ALUNO,  2, 1000, false",
+        "PROFESSOR, 0,    0, false",
+        "PROFESSOR, 4,  500, false",
+        "PROFESSOR, 7,  999, false",
         "PROFESSOR, 7, 1000, false",
-        "VISITANTE, 0, 0, false"
+        "VISITANTE, 0,    0, false",
+        "VISITANTE, 0,  999, false",
+        "VISITANTE, 0, 1000, false"
     })
     void emprestimoPermitidoQuandoCondicoesSaoAtendidas(
             TipoUsuario tipo,
@@ -55,12 +62,15 @@ class PodeEmprestarTest {
         );
     }
 
-    // Multa pendente superior ao limite permitido.
+    // Multa pendente superior ao limite permitido (valor-limite 1001 e representante acima 1500).
     @ParameterizedTest
     @CsvSource({
         "ALUNO, 1001",
+        "ALUNO, 1500",
         "PROFESSOR, 1001",
-        "VISITANTE, 1001"
+        "PROFESSOR, 1500",
+        "VISITANTE, 1001",
+        "VISITANTE, 1500"
     })
     void emprestimoNegadoQuandoMultaSuperaLimite(
             TipoUsuario tipo,
